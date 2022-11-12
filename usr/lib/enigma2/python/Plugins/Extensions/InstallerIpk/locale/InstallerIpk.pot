@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-04-25 13:00+0300\n"
+"POT-Creation-Date: 2016-03-31 22:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,23 +17,40 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: plugin.py:158
+#: FeedDownloader.py:79
+#, python-format
+msgid "%s is downloaded"
+msgstr ""
+
+#: FeedDownloader.py:35
+msgid "2boom's feed downloader"
+msgstr ""
+
+#: plugin.py:68 plugin.py:74
+msgid "Auto scan"
+msgstr ""
+
+#: plugin.py:169
 msgid "Cancel"
 msgstr ""
 
-#: Umount.py:86
+#: Umount.py:87
 msgid "Cannot umount device"
 msgstr ""
 
-#: InstallConsole.py:44 plugin.py:266
+#: FeedDownloader.py:68
+msgid "Check your internet connection"
+msgstr ""
+
+#: FeedDownloader.py:48 InstallConsole.py:44 plugin.py:276
 msgid "Close"
 msgstr ""
 
-#: plugin.py:290
+#: plugin.py:305
 msgid "Command execution forced install ipk"
 msgstr ""
 
-#: plugin.py:314
+#: plugin.py:329
 msgid "Command execution install ipk"
 msgstr ""
 
@@ -41,8 +58,16 @@ msgstr ""
 msgid "Command execution..."
 msgstr ""
 
-#: Umount.py:41
+#: Umount.py:40
 msgid "DEVICE"
+msgstr ""
+
+#: FeedDownloader.py:49
+msgid "Download"
+msgstr ""
+
+#: FeedDownloader.py:68 FeedDownloader.py:77
+msgid "Error download plugin list"
 msgstr ""
 
 #: InstallConsole.py:87
@@ -58,59 +83,63 @@ msgstr ""
 msgid "Failed to write log"
 msgstr ""
 
-#: plugin.py:268
+#: plugin.py:45 plugin.py:83
+msgid "Feed downloader"
+msgstr ""
+
+#: plugin.py:278
 msgid "Forced install"
 msgstr ""
 
-#: plugin.py:267
+#: plugin.py:277
 msgid "Install"
 msgstr ""
 
-#: plugin.py:57 plugin.py:140
+#: plugin.py:61 plugin.py:151
 msgid "Install package ipk"
 msgstr ""
 
-#: plugin.py:317 plugin.py:318
+#: plugin.py:291 plugin.py:332 plugin.py:333
 msgid "Install package ipk in console"
 msgstr ""
 
-#: plugin.py:82 plugin.py:317 plugin.py:318
+#: plugin.py:93 plugin.py:332 plugin.py:333
 msgid "Installer ipk"
 msgstr ""
 
-#: plugin.py:319
+#: plugin.py:334
 msgid "Ipk Install"
 msgstr ""
 
-#: Umount.py:42
+#: Umount.py:41
 msgid "MOUNTED ON"
 msgstr ""
 
-#: plugin.py:72
+#: plugin.py:81
 msgid "Memory"
 msgstr ""
 
-#: plugin.py:51
+#: plugin.py:55
 msgid "No displayable files on this medium found!"
 msgstr ""
 
-#: plugin.py:157
+#: plugin.py:168
 msgid "OK"
 msgstr ""
 
-#: plugin.py:41 plugin.py:73
+#: plugin.py:42 plugin.py:82
 msgid "Open setup"
 msgstr ""
 
-#: plugin.py:75
+#: plugin.py:85
 msgid "Please select dir to be scanned, open setup or umount device"
 msgstr ""
 
-#: plugin.py:270
+#: plugin.py:280
 msgid "Press OK to toggle the selection"
 msgstr ""
 
-#: Umount.py:92
+#: Umount.py:96
 msgid "Really umount device"
 msgstr ""
 
@@ -122,7 +151,7 @@ msgstr ""
 msgid "Restart the GUI now?"
 msgstr ""
 
-#: Umount.py:44
+#: Umount.py:43
 msgid "SIZE"
 msgstr ""
 
@@ -130,19 +159,23 @@ msgstr ""
 msgid "Save log"
 msgstr ""
 
-#: plugin.py:269
+#: plugin.py:86
+msgid "Select action"
+msgstr ""
+
+#: plugin.py:279
 msgid "Select all"
 msgstr ""
 
-#: Umount.py:40
+#: Umount.py:39
 msgid "Select device and press OK to umount or EXIT to quit"
 msgstr ""
 
-#: plugin.py:190
+#: plugin.py:201
 msgid "Select the type of manual scan"
 msgstr ""
 
-#: plugin.py:155
+#: plugin.py:166
 msgid "Setup Installer ipk"
 msgstr ""
 
@@ -150,34 +183,34 @@ msgstr ""
 msgid "Show only removable devices"
 msgstr ""
 
-#: plugin.py:188
+#: plugin.py:199
 msgid "Show plugin in setup menu"
 msgstr ""
 
-#: plugin.py:189
+#: plugin.py:200
 msgid "Show popup if no files found in automount"
 msgstr ""
 
-#: Umount.py:43
+#: Umount.py:42
 msgid "TYPE"
 msgstr ""
 
-#: Umount.py:47
+#: Umount.py:46
 #, python-format
 msgid "The current directory: %s"
 msgstr ""
 
-#: plugin.py:63 plugin.py:68
+#: plugin.py:67 plugin.py:73
 msgid "The following files were found..."
 msgstr ""
 
-#: plugin.py:295
+#: plugin.py:310
 msgid ""
 "This installation option only for exceptional cases!\n"
 "Do you really want to use it?"
 msgstr ""
 
-#: InstallConsole.py:46 Umount.py:58 plugin.py:44 plugin.py:74
+#: InstallConsole.py:46 Umount.py:58 plugin.py:48 plugin.py:84
 msgid "Umount device"
 msgstr ""
 
@@ -194,12 +227,12 @@ msgstr ""
 msgid "only ipk"
 msgstr ""
 
-#: Umount.py:85
+#: Umount.py:86
 msgid "umount return code"
 msgstr ""
 
-msgid "Select action"
+msgid "Execute shell command"
 msgstr ""
 
-msgid "Auto scan"
+msgid "Please enter shell command:"
 msgstr ""

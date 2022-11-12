@@ -12,7 +12,6 @@ import os
 from Components.config import KEY_LEFT, KEY_RIGHT, config
 from Components.ConfigList import ConfigList, ConfigListScreen
 
-
 class UmountDevice(Screen):
 	skin = """
 		<screen position="center,center" size="680,460" title="Umount device">
@@ -48,8 +47,9 @@ class UmountDevice(Screen):
 			self["wdg_dir"].setText(dir)
 		self.wdg_list_dev = []
 		self.list_dev = []
+		self.umount_device = ""
 		self.noDeviceError = True
-		self["wdg_menulist_device"] = MenuList( self.wdg_list_dev )
+		self["wdg_menulist_device"] = MenuList(self.wdg_list_dev)
 		self.getDevicesList()
 		self.configList = []
 		self["wdg_config"] = ConfigList(self.configList, session = self.session)
@@ -78,21 +78,24 @@ class UmountDevice(Screen):
 
 	def umountDeviceConfirm(self, result):
 		if result == True :
-			Console().ePopen('umount -f %s 2>&1' % (self.list_dev[self.selectedDevice]), self.umountDeviceDone)
+			#Console().ePopen('umount -f %s 2>&1' % (self.list_dev[self.selectedDevice]), self.umountDeviceDone)
+			Console().ePopen('umount %s' % (self.umount_device), self.umountDeviceDone)
 
 	def umountDeviceDone(self, result, retval, extra_args):
 		if retval != 0:
 			errmsg = '\n\n' + _("umount return code") + ": %s\n%s" % (retval,result)
-			self.session.open(MessageBox, text = _("Cannot umount device") + " " + self.list_dev[self.selectedDevice] + errmsg, type = MessageBox.TYPE_ERROR, timeout = 10)
+			self.session.open(MessageBox, text = _("Cannot umount device") + " " + self.umount_device + errmsg, type = MessageBox.TYPE_ERROR, timeout = 10)
+			return
 		self.getDevicesList()
 
 	def umountDevice(self):
-		if self.noDeviceError == False :
+		self.umount_device = ""
+		if self.noDeviceError == False:
 			self.selectedDevice = self["wdg_menulist_device"].getSelectedIndex()
-			self.session.openWithCallback(self.umountDeviceConfirm, MessageBox, text = _("Really umount device") + " " + self.list_dev[self.selectedDevice] + " ?", type = MessageBox.TYPE_YESNO, timeout = 10, default = False )
+			self.umount_device = self.list_dev[self.selectedDevice]
+			self.session.openWithCallback(self.umountDeviceConfirm, MessageBox, text = _("Really umount device") + " " + self.umount_device + " ?", type = MessageBox.TYPE_YESNO, timeout = 10, default = False )
 
 	def getDevicesList(self):
-		global config
 		self.wdg_list_dev = []
 		self.list_dev = []
 		self.noDeviceError = False
@@ -101,29 +104,63 @@ class UmountDevice(Screen):
 			fd = open(file_mounts,'r')
 			lines_mount = fd.readlines()
 			fd.close()
-			for line in lines_mount :
+			for line in lines_mount:
 				l = line.split(' ')
-				if l[0][:7] == '/dev/sd' :
-					device = l[0][5:8]
-					partition = l[0][5:9]
-					size = '????'
-					file_size = '/sys/block/%s/%s/size' % (device,partition)
-					if os.path.exists(file_size) :
-						fd = open(file_size,'r')
-						size = fd.read()
+				mmc = "mmcblk" in l[0]
+				if l[0][:7] == '/dev/sd' or mmc:
+					if not mmc:
+						device = l[0][5:8]
+						partition = l[0][5:9]
+						file_size = '/sys/block/%s/%s/size' % (device,partition)
+					else:
+						device = 'mmcblk0'
+						partition = l[0][5:]
+						file_size = '/sys/block/mmcblk0/%s/size' % (partition)
+					cap = 0
+					if os.path.exists(file_size):
+						try:
+							fd = open(file_size,'r')
+							size = fd.read()
+							fd.close()
+							size = size.strip('\n\r\t ')
+							cap = int(size) / 1000 * 512 / 1000
+						except:
+							pass
+					rotational = "1"
+					file_rotational = '/sys/block/%s/queue/rotational' % (device)
+					if os.path.exists(file_rotational):
+						fd = open(file_rotational, 'r')
+						rotational = fd.read()
 						fd.close()
-						size = size.strip('\n\r\t ')
-						size = int(size) / 2048
+						rotational = rotational.strip('\n\r\t ')
+					internal = os.system("readlink -fn /sys/block/%s/device | grep -qs 'pci\|ahci\|sata'" % device)
 					removable = '0'
 					file_removable = '/sys/block/%s/removable' % (device)
-					if os.path.exists(file_removable) :
+					if os.path.exists(file_removable):
 						fd = open(file_removable, 'r')
 						removable = fd.read()
 						fd.close()
 						removable = removable.strip('\n\r\t ')
-					if config.plugins.InstallerIpk.only_removable.value == 0 or removable == '1' :
+					if not config.plugins.InstallerIpk.only_removable.value or internal:
 						self.list_dev.append(l[0])
-						self.wdg_list_dev.append( "%-10s %-14s %-11s %8sMB" % (l[0], l[1], l[2]+','+l[3][:2], size) )
+						disk_name = "USB"
+						if removable == '0':
+							disk_name = "HDD"
+							if internal:
+								disk_name = "USB HDD"
+						if rotational == "0":
+							if mmc:
+								disk_name = "MMC"
+							else:
+								disk_name = "SSD"
+						self.wdg_list_dev.append("%-10s %-14s %-11s %14s (%s)" % (l[0], l[1], l[2]+','+l[3][:2], self.capacity(cap), disk_name))
 		if len(self.list_dev) == 0:
 			self.noDeviceError = True
 		self["wdg_menulist_device"].setList(self.wdg_list_dev)
+
+	def capacity(self, cap):
+		if cap == 0:
+			return "????"
+		if cap < 1000:
+			return "%03d MB" % cap
+		return "%d.%03d GB" % (cap/1000, cap%1000)

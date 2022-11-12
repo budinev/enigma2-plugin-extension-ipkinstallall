@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from . import _
 from Screens.Screen import Screen
 from Components.Pixmap import Pixmap, MultiPixmap
@@ -38,7 +39,7 @@ class myConsole(Console):
 				<widget name="text" position="10,45" size="540,420" font="Regular;22" />
 			</screen>"""
 		
-	def __init__(self, session, dir = None,  title = _("Command execution..."), cmdlist = None):
+	def __init__(self, session, dir=None,  title =_("Command execution..."), cmdlist=None, manual=False):
 		self.dir = dir
 		Console.__init__(self, session, title, cmdlist)
 		self["red"] = Button(_("Close"))
@@ -54,14 +55,14 @@ class myConsole(Console):
 		}, -1)
 
 		self.cmdlist = cmdlist
+		self.manual = manual
 		self.run = 0
 
 	def keyRed(self):
-		if self.run == len(self.cmdlist):
-			try:
-				self.cancel()
-			except:
-				pass
+		try:
+			self.cancel()
+		except:
+			pass
 
 	def keyBlue(self):
 		try:
@@ -89,12 +90,17 @@ class myConsole(Console):
 	def keyGreen(self):
 		if self.run == len(self.cmdlist):
 			self.session.openWithCallback(self.restartGui, MessageBox, _("Restart the GUI now?"), MessageBox.TYPE_YESNO)
-		
+
 	def restartGui(self, answer):
-		if answer is True:
+		if answer:
 			self.session.open(TryQuitMainloop, 3)
 
 	def keyYellow(self):
+		#if self.manual:
+		#	self.container.appClosed.remove(self.runFinished)
+		#	self.container.dataAvail.remove(self.dataAvail)
+		#	self.container.kill()
+		#	self.close()
 		if self.run == len(self.cmdlist):
-			from Umount import UmountDevice
+			from .Umount import UmountDevice
 			self.session.open(UmountDevice, cur_dir=self.dir)

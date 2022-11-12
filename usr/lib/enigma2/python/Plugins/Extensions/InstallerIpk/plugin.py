@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from . import _
 from Plugins.Plugin import PluginDescriptor
 from Screens.Screen import Screen
@@ -12,61 +13,71 @@ from Components.config import config, ConfigSubsection, getConfigListEntry
 from Components.Label import Label
 from Components.Harddisk import harddiskmanager
 from Components.MenuList import MenuList
-from ipkSelectionList import SelectionList
+from .ipkSelectionList import SelectionList
 from Components.ActionMap import ActionMap
 from Components.Button import Button
 from Components.Sources.StaticText import StaticText
 from Tools.BoundFunction import boundFunction
 from Tools.Directories import fileExists
-from InstallConsole import myConsole
+from .InstallConsole import myConsole
 from Screens.InfoBar import InfoBar
+from Screens.VirtualKeyBoard import VirtualKeyBoard
 from enigma import getDesktop
-from Umount import UmountDevice
+from .Umount import UmountDevice
+from .FeedDownloader import DownFeed
 import os
 
 global_session = None
 current_dir = None
 
 def execute(option):
-	if option is None:
+	if option == None:
 		return
 
 	(_, scanner, files, session) = option
 	scanner.open(files, session)
 
+def runCmd(cmd=""):
+	if cmd and global_session:
+		global_session.open(myConsole, '/tmp', cmd, [cmd], manual=True)
+
 def mountpoint_choosen(option, manual=False):
-	if option is None:
+	if option == None:
 		return
 	(description, mountpoint, session) = option
 	if option[0] == _("Open setup"):
 		session.open(SetupInstallerScreen)
 		return
+	if option[0] == _("Feed downloader"):
+		session.open(DownFeed)
+		return
 	if option[0] == _("Umount device"):
 		session.open(UmountDevice)
 		return
+	if option[0] == _("Execute shell command"):
+		session.openWithCallback(runCmd, VirtualKeyBoard, title=_("Please enter shell command:"))
+		return
 	res = scanDevice(mountpoint)
-	list = [ (r.description, r, res[r], session) for r in res ]
-	if not list:
+	_list = [ (r.description, r, res[r], session) for r in res ]
+	if not _list:
 		if os.access(mountpoint, os.F_OK|os.R_OK) and (manual or config.plugins.InstallerIpk.autodetect_message.value):
-			session.open(MessageBox, _("No displayable files on this medium found!"), MessageBox.TYPE_ERROR, timeout = 5)
-		else:
-			print "ignore", mountpoint, "because its not accessible"
+			session.open(MessageBox, _("No displayable files on this medium found!"), MessageBox.TYPE_INFO, timeout = 5)
 		return
 	lst = [ ]
-	for x in list:
+	for x in _list:
 		if x[0] == _("Install package ipk"):
 			lst.append(x)
 			global current_dir
 			current_dir = mountpoint
 	if manual:
 		if config.plugins.InstallerIpk.manualdetect_type.value == "1":
-			dlg = session.openWithCallback(execute, ChoiceBox, title = _("The following files were found..."), list = list)
+			dlg = session.openWithCallback(execute, ChoiceBox, title = _("The following files were found..."), list = _list)
 			dlg.setTitle(_("Auto scan"))
 		else:
 			if len(lst) > 0:
 				execute(lst[0])
 	else:
-		dlg = session.openWithCallback(execute, ChoiceBox, title = _("The following files were found..."), list = list)
+		dlg = session.openWithCallback(execute, ChoiceBox, title = _("The following files were found..."), list = _list)
 		dlg.setTitle(_("Auto scan"))
 
 def scan(session):
@@ -76,13 +87,15 @@ def scan(session):
 		parts = [ (r.description, r.mountpoint, session) for r in harddiskmanager.getMountedPartitions(onlyhotplug = False) if os.access(r.mountpoint, os.F_OK|os.R_OK) ]
 	parts.append( (_("Memory") + "\t/tmp", "/tmp", session) )
 	parts.append( (_("Open setup"), None, session) )
+	#parts.append( (_("Feed downloader"), None, session) )
+	parts.append( (_("Execute shell command"), None, session) )
 	parts.append( (_("Umount device"), None, session) )
 	dlg = session.openWithCallback(boundFunction(mountpoint_choosen, manual=True), ChoiceBox, title = _("Please select dir to be scanned, open setup or umount device"), list = parts)
 	dlg.setTitle(_("Select action"))
 
 def main(session, **kwargs):
 	scan(session)
-	
+
 def setup_menu(menuid, **kwargs):
 	if menuid == "setup" and config.plugins.InstallerIpk.menu_setup.value:
 		return [(_("Installer ipk"), main, "install_ipk", None)]
@@ -90,29 +103,24 @@ def setup_menu(menuid, **kwargs):
 		return []
 
 def partListChanged(action, device):
+	global current_dir
 	mediascanner = True
-	from os import path
-	if not path.exists("/usr/lib/enigma2/python/Plugins/Extensions/MediaScanner/plugin.pyo"):
+	if not os.path.exists("/usr/lib/enigma2/python/Plugins/Extensions/MediaScanner/plugin.pyo"):
 		mediascanner = False
 	if InfoBar and InfoBar.instance:
 		if InfoBar.instance.execing or mediascanner:
 			try:
 				if action == 'add' and device.is_hotplug:
-					global current_dir
 					current_dir = device.mountpoint
-					print  "current_dir %s" % (current_dir)
 					if not mediascanner and InfoBar.instance.execing:
 						mountpoint_choosen((device.description, device.mountpoint, global_session))
 			except:
 				pass
-		else:
-			print "main infobar is not execing... so we ignore hotplug event!"
-	else:
-			print "hotplug event.. but no infobar"
 
 def sessionstart(reason, session):
 	global global_session
-	global_session = session
+	if session:
+		global_session = session
 
 def autostart(reason, **kwargs):
 	global global_session
@@ -142,7 +150,7 @@ def filescan(**kwargs):
 					ScanPath(path = "ipk", with_subdirs = True),
 					ScanPath(path = "", with_subdirs = False),
 				],
-			name = "Satlodge Ipk Install",
+			name = "Ipk Install",
 			description = _("Install package ipk"),
 			openfnc = filescan_open, )
 
@@ -158,7 +166,7 @@ class SetupInstallerScreen(Screen, ConfigListScreen):
 
 	def __init__(self, session, args = None):
 		self.skin = SetupInstallerScreen.skin
-		self.setup_title = _("Setup Satlodge Installer ipk")
+		self.setup_title = _("Setup Installer ipk")
 		Screen.__init__(self, session)
 		self["ok"] = Button(_("OK"))
 		self["cancel"] = Button(_("Cancel"))
@@ -196,12 +204,12 @@ class SetupInstallerScreen(Screen, ConfigListScreen):
 		self.cfg_type = getConfigListEntry(_("Select the type of manual scan"), self.IPK.manualdetect_type)
 
 	def createSetup(self):
-		list = [ self.cfg_menu ]
-		list.append(self.cfg_type)
+		_list = [ self.cfg_menu ]
+		_list.append(self.cfg_type)
 		if not fileExists("/usr/lib/enigma2/python/Plugins/Extensions/MediaScanner/plugin.pyo"):
-			list.append(self.cfg_message)
-		self["config"].list = list
-		self["config"].l.setList(list)
+			_list.append(self.cfg_message)
+		self["config"].list = _list
+		self["config"].l.setList(_list)
 
 	def keyOk(self):
 		self.keyGreen()
@@ -210,7 +218,7 @@ class SetupInstallerScreen(Screen, ConfigListScreen):
 		def setPrevValues(section, values):
 			for (key,val) in section.content.items.items():
 				value = values.get(key, None)
-				if value is not None:
+				if value != None:
 					if isinstance(val, ConfigSubsection):
 						setPrevValues(val, value)
 					else:
@@ -261,12 +269,12 @@ class OpkgInstaller(Screen):
 				<widget source="introduction" render="Label" position="5,420" zPosition="10" size="550,30" halign="center" valign="center" font="Regular;22" transparent="1" shadowColor="black" shadowOffset="-1,-1" />
 			</screen>"""
 
-	def __init__(self, session, list):
+	def __init__(self, session, filelist):
 		Screen.__init__(self, session)
 		self.list = SelectionList()
 		self["list"] = self.list
-		for listindex in range(len(list)):
-			self.list.addSelection(list[listindex], list[listindex], listindex, False)
+		for listindex in range(len(filelist)):
+			self.list.addSelection(filelist[listindex], filelist[listindex], listindex, False)
 
 		self["key_red"] = StaticText(_("Close"))
 		self["key_green"] = StaticText(_("Install"))
@@ -290,22 +298,22 @@ class OpkgInstaller(Screen):
 		self.setTitle(self.setup_title)
 
 	def forceInstall(self):
-		list = self.list.getSelectionsList()
-		if list and len(list) > 0:
-			global current_dir
+		global current_dir
+		_list = self.list.getSelectionsList()
+		if _list and len(_list) > 0:
 			dir = current_dir
-			cmd = "opkg install -force-overwrite -force-downgrade "
-			for item in list:
+			cmd = "opkg install --force-reinstall --force-overwrite --force-downgrade "
+			for item in _list:
 				cmd += "%s " % item[1]
 			self.session.open(myConsole, dir, _("Command execution forced install ipk"),[cmd])
 
 	def preforce(self):
-		list = self.list.getSelectionsList()
-		if list and len(list) > 0:
+		_list = self.list.getSelectionsList()
+		if _list and len(_list) > 0:
 			self.session.openWithCallback(self.runAnswer, MessageBox, _("This installation option only for exceptional cases!\nDo you really want to use it?"), MessageBox.TYPE_YESNO, default = False)
 
 	def runAnswer(self, answer):
-		if answer is True:
+		if answer:
 			self.forceInstall()
 
 	def cansel(self):
@@ -314,19 +322,19 @@ class OpkgInstaller(Screen):
 		self.close()
 
 	def install(self):
-		list = self.list.getSelectionsList()
-		if list and len(list) > 0:
-			global current_dir
+		global current_dir
+		_list = self.list.getSelectionsList()
+		if _list and len(_list) > 0:
 			dir = current_dir
 			cmd = "opkg install "
-			for item in list:
+			for item in _list:
 				cmd += "%s " % item[1]
 			self.session.open(myConsole, dir, _("Command execution install ipk"),[cmd])
 
-def Plugins(path,**kwargs):
-	return [PluginDescriptor(name=_("Satlodge Installer ipk"), description=_("Install package ipk in console"), where = PluginDescriptor.WHERE_MENU, fnc = setup_menu),
-		PluginDescriptor(name=_("Satlodge Installer ipk"), description=_("Install package ipk in console"), where = PluginDescriptor.WHERE_EXTENSIONSMENU, fnc=main),
-		PluginDescriptor(name=_("Satlodge Ipk Install"), where = PluginDescriptor.WHERE_FILESCAN, fnc = filescan),
+def Plugins(path, **kwargs):
+	return [PluginDescriptor(name=_("Installer ipk"), description=_("Install package ipk in console"), where = PluginDescriptor.WHERE_MENU, fnc = setup_menu),
+		PluginDescriptor(name=_("Installer ipk"), description=_("Install package ipk in console"), where = PluginDescriptor.WHERE_EXTENSIONSMENU, fnc=main),
+		PluginDescriptor(name=_("Ipk Install"), where = PluginDescriptor.WHERE_FILESCAN, fnc = filescan),
 		PluginDescriptor(where = PluginDescriptor.WHERE_SESSIONSTART, fnc = sessionstart),
 		PluginDescriptor(where = PluginDescriptor.WHERE_AUTOSTART, fnc = autostart)
 		]

@@ -2,7 +2,6 @@
 from Components.Language import language
 from Tools.Directories import resolveFilename, SCOPE_LANGUAGE, SCOPE_PLUGINS
 from os import environ
-import os
 import gettext
 from Components.config import config, ConfigSubsection, ConfigYesNo, ConfigSelection
 
