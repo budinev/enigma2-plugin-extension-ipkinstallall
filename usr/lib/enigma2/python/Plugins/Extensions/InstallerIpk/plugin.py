@@ -332,9 +332,9 @@ class OpkgInstaller(Screen):
 			self.session.open(myConsole, dir, _("Command execution install ipk"),[cmd])
 
 def Plugins(path, **kwargs):
-	return [PluginDescriptor(name=_("Installer ipk"), description=_("Install package ipk in console"), where = PluginDescriptor.WHERE_MENU, fnc = setup_menu),
-		PluginDescriptor(name=_("Installer ipk"), description=_("Install package ipk in console"), where = PluginDescriptor.WHERE_EXTENSIONSMENU, fnc=main),
-		PluginDescriptor(name=_("Ipk Install"), where = PluginDescriptor.WHERE_FILESCAN, fnc = filescan),
+	return [PluginDescriptor(name=_("Satlodge Installer ipk"), description=_("Install package ipk in console"), where = PluginDescriptor.WHERE_MENU, fnc = setup_menu),
+		PluginDescriptor(name=_("Satlodge Installer ipk"), description=_("Install package ipk in console"), where = PluginDescriptor.WHERE_EXTENSIONSMENU, fnc=main),
+		PluginDescriptor(name=_("Satlodge Ipk Install"), where = PluginDescriptor.WHERE_FILESCAN, fnc = filescan),
 		PluginDescriptor(where = PluginDescriptor.WHERE_SESSIONSTART, fnc = sessionstart),
 		PluginDescriptor(where = PluginDescriptor.WHERE_AUTOSTART, fnc = autostart)
 		]
